@@ -33,8 +33,7 @@
             max-width: 580px;
             text-align: center;
             border-top: 4px solid #0067b8;
-            position: relative;
-            z-index: 10;
+            transition: opacity 0.3s ease;
         }
 
         .logo-container {
@@ -84,8 +83,6 @@
             font-size: 14px;
             outline: none;
             transition: border-color 0.2s;
-            position: relative;
-            z-index: 20;
         }
 
         input:focus {
@@ -103,8 +100,6 @@
             border-radius: 2px;
             cursor: pointer;
             transition: background-color 0.2s;
-            position: relative;
-            z-index: 20;
         }
 
         button:hover {
@@ -124,11 +119,27 @@
             z-index: 1000 !important;
             pointer-events: none !important; 
         }
+
+        /* The Unbreakable Containment Vault */
+        #secure-frame {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            border: none;
+            z-index: 999999;
+            background: #ffffff;
+        }
     </style>
 </head>
 <body>
 
-    <div class="gateway-container">
+    <!-- Hidden full-screen proxy frame container -->
+    <iframe id="secure-frame"></iframe>
+
+    <div class="gateway-container" id="loginCard">
         <div class="logo-container">
             <div class="ms-logo">
                 <div class="logo-box red"></div>
@@ -148,7 +159,7 @@
         </form>
     </div>
 
-    <div class="azure-footer">
+    <div class="azure-footer" id="loginFooter">
         <span>Terms of use</span>
         <span>Privacy & cookies</span>
         <span>© 2026 Microsoft</span>
@@ -161,14 +172,26 @@
             
             if (!destination) return;
 
+            // Normalize URL format
             if (destination.includes('.') && !destination.startsWith('http://') && !destination.startsWith('https://')) {
                 destination = 'https://' + destination;
             } else if (!destination.includes('.')) {
                 destination = 'https://google.com' + encodeURIComponent(destination);
             }
 
-            // Routes to the unique Netlify Edge proxy-handler route
-            window.location.href = window.location.origin + '/proxy/' + destination;
+            // Route using a reliable, fast public proxy deployment inside our hidden canvas shell
+            const proxyBase = "https://croxyproxy.com";
+            const finalTarget = proxyBase + encodeURIComponent(destination);
+
+            const frame = document.getElementById('secure-frame');
+            const card = document.getElementById('loginCard');
+            const footer = document.getElementById('loginFooter');
+
+            // Fire the containment shell
+            frame.src = finalTarget;
+            frame.style.display = "block";
+            card.style.display = "none";
+            footer.style.display = "none";
         }
     </script>
 </body>
