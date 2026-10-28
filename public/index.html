@@ -3,23 +3,86 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Microsoft Institutional Web Services</title>
+    <title>Microsoft Institutional Web Services Gateway</title>
     <style>
-        body { font-family: system-ui, -apple-system, sans-serif; background-color: #121212; color: #ffffff; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .container { text-align: center; width: 90%; max-width: 600px; }
-        h1 { margin-bottom: 20px; font-weight: 500; color: #00d4b2; }
-        .search-box { display: flex; box-shadow: 0 4px 15px rgba(0,0,0,0.5); border-radius: 8px; overflow: hidden; }
-        input { flex: 1; padding: 16px; border: none; outline: none; font-size: 16px; background-color: #1e1e1e; color: #fff; }
-        button { padding: 16px 24px; border: none; background-color: #00d4b2; color: #121212; font-size: 16px; font-weight: bold; cursor: pointer; }
-        button:hover { background-color: #00b395; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+            background-color: #f4f6f9; 
+            color: #333333; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            margin: 0; 
+        }
+        .container { 
+            text-align: center; 
+            width: 90%; 
+            max-width: 650px; 
+            background-color: #ffffff;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e1e4e8;
+        }
+        h1 { 
+            margin-top: 0;
+            margin-bottom: 8px; 
+            font-size: 28px;
+            font-weight: 600; 
+            color: #1a1a1a; 
+        }
+        p {
+            color: #666666;
+            margin-bottom: 30px;
+            font-size: 15px;
+        }
+        .search-box { 
+            display: flex; 
+            border: 1px solid #ced4da;
+            border-radius: 6px; 
+            overflow: hidden; 
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .search-box:focus-within {
+            border-color: #0066cc;
+            box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.15);
+        }
+        input { 
+            flex: 1; 
+            padding: 16px; 
+            border: none; 
+            outline: none; 
+            font-size: 16px; 
+            background-color: #ffffff; 
+            color: #333333; 
+        }
+        input::placeholder {
+            color: #999999;
+        }
+        button { 
+            padding: 16px 32px; 
+            border: none; 
+            background-color: #0066cc; 
+            color: #ffffff; 
+            font-size: 16px; 
+            font-weight: 600; 
+            cursor: pointer; 
+            transition: background-color 0.2s;
+        }
+        button:hover { 
+            background-color: #0052a3; 
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Microsoft Institutional Web Services</h1>
+        <h1>Microsoft Instituional Web Services Gateway</h1>
+        <p>Establish a connection to the database</p>
         <div class="search-box">
-            <input type="text" id="urlInput" placeholder="Navigate the content delivery platform" onkeydown="if(event.key==='Enter') launchProxy()">
-            <button onclick="launchProxy()">Go</button>
+            <input type="text" id="urlInput" placeholder="example.com" onkeydown="if(event.key==='Enter') launchProxy()">
+            <button onclick="launchProxy()">Connect</button>
         </div>
     </div>
     <script>
@@ -29,7 +92,6 @@
             if (!url.startsWith('http://') && !url.startsWith('https://')) {
                 url = 'https://' + url;
             }
-            // Seamlessly hands off the URL to your existing Netlify Edge function
             window.location.href = '/proxy/' + url;
         }
     </script>
