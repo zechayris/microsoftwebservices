@@ -183,7 +183,7 @@
             }
 
             // Routes target strings seamlessly through the dynamic edge-handler framework
-            window.location.href = '/proxy/' + destination;
+            window.location.href = __uv$config.prefix + __uv$config.encodeUrl(destination);
         }
     </script>
 </body>
