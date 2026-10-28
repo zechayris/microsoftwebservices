@@ -415,80 +415,73 @@ export default async (request: Request, context: Context) => {
             `"${url.origin}${matchedPrefix}$1"`
           );
           
-          // 11. 处理 JavaScript 中的根路径引用
-          content = content.replace(
-            /([^a-zA-Z0-9_])(['"])(\/[^\/'"]+\/[^'"]*?)(['"])/g,
-            `$1$2${url.origin}${matchedPrefix}$3$4`
-          );
-          
-          // 12. 处理 srcset 属性
-          content = content.replace(
-            /srcset=["']([^"']+)["']/gi,
-            (match, srcset) => {
-              // 处理 srcset 中的每个 URL
-              const newSrcset = srcset.split(',').map((src: string) => {
-                const [srcUrl, descriptor] = src.trim().split(/\s+/);
-                let newUrl = srcUrl;
-                
-                if (srcUrl.startsWith('http://') || srcUrl.startsWith('https://')) {
-                  if (srcUrl.includes(targetDomain)) {
-                    newUrl = srcUrl.replace(
-                      new RegExp(`https?://${targetDomain}(/[^\\s]*)`, 'i'),
-                      `${url.origin}${matchedPrefix}$1`
-                    );
-                  }
-                } else if (srcUrl.startsWith('//')) {
-                  if (srcUrl.includes(targetDomain)) {
-                    newUrl = srcUrl.replace(
-                      new RegExp(`//${targetDomain}(/[^\\s]*)`, 'i'),
-                      `${url.origin}${matchedPrefix}$1`
-                    );
-                  }
-                } else if (srcUrl.startsWith('/')) {
-                  newUrl = `${url.origin}${matchedPrefix}${srcUrl}`;
-                }
-                
-                return descriptor ? `${newUrl} ${descriptor}` : newUrl;
-              }).join(', ');
-              
-              return `srcset="${newSrcset}"`;
-            }
-          );
-          
-          // 应用特定网站的替换规则
-          if (SPECIAL_REPLACEMENTS[targetDomain as keyof typeof SPECIAL_REPLACEMENTS]) {
-            const replacements = SPECIAL_REPLACEMENTS[targetDomain as keyof typeof SPECIAL_REPLACEMENTS];
-            for (const replacement of replacements) {
-              content = content.replace(replacement.pattern, replacement.replacement as any);
-            }
-          }
-          
           // 在页面底部添加修复脚本，用于动态加载的内容
           const fixScript = `
           <script>
           // 修复动态加载的资源路径
           (function() {
+            const currentProxyDomain = "${url.origin}";
+            const currentPrefix = "${matchedPrefix}";
+            const targetBase = "${targetUrl.origin}";
+
+            // 1. 全局点击拦截器：捕获所有点击，防止相对/绝对路径跳出代理
+            document.addEventListener('click', function(e) {
+              const originLink = e.target.closest('a');
+              if (originLink && originLink.href) {
+                const clickedUrl = new URL(originLink.href);
+                // 如果链接指向当前代理域名，但没有带上正确的代理前缀，进行代理包装修复
+                if (clickedUrl.origin === window.location.origin && !clickedUrl.pathname.startsWith(currentPrefix) && !clickedUrl.pathname.startsWith('/proxy/')) {
+                  e.preventDefault();
+                  window.location.href = currentProxyDomain + currentPrefix + clickedUrl.pathname + clickedUrl.search + clickedUrl.hash;
+                }
+              }
+            }, true);
+
+            // 2. 拦截 Fetch 请求 (修复连接按钮、异步 API API 呼叫)
+            const originalFetch = window.fetch;
+            window.fetch = async function(resource, init) {
+              if (typeof resource === 'string') {
+                if (resource.startsWith('/') && !resource.startsWith(currentPrefix) && !resource.startsWith('/proxy/')) {
+                  resource = currentProxyDomain + currentPrefix + resource;
+                } else if (resource.startsWith('http') && !resource.startsWith(currentProxyDomain)) {
+                  // 如果直接对目标网站发绝对路径请求，通过 /proxy/ 重定向
+                  resource = currentProxyDomain + '/proxy/' + encodeURIComponent(resource);
+                }
+              }
+              return originalFetch.call(this, resource, init);
+            };
+
+            // 3. 拦截传统 XMLHttpRequest (部分老旧或底层 Connect 按钮会使用)
+            const originalOpen = XMLHttpRequest.prototype.open;
+            XMLHttpRequest.prototype.open = function(method, url, ...args) {
+              if (typeof url === 'string') {
+                if (url.startsWith('/') && !url.startsWith(currentPrefix) && !url.startsWith('/proxy/')) {
+                  url = currentProxyDomain + currentPrefix + url;
+                } else if (url.startsWith('http') && !url.startsWith(currentProxyDomain)) {
+                  url = currentProxyDomain + '/proxy/' + encodeURIComponent(url);
+                }
+              }
+              return originalOpen.call(this, method, url, ...args);
+            };
+
             // 特殊处理 Vercel 的 Next.js 动态加载
             if (window.location.pathname.startsWith('/hexo')) {
-              // 拦截 fetch 请求
-              const originalFetch = window.fetch;
+              // 拦截 Next.js 特殊 fetch 请求
+              const hexoFetch = window.fetch;
               window.fetch = function(resource, init) {
                 if (typeof resource === 'string') {
-                  // 对于 next-data 请求特殊处理
                   if (resource.includes('/_next/data/') && !resource.startsWith('/hexo')) {
                     resource = '/hexo' + resource;
                   }
-                  // 其他 API 请求
                   if (resource.startsWith('/api/') && !resource.startsWith('/hexo')) {
                     resource = '/hexo' + resource;
                   }
                 }
-                return originalFetch.call(this, resource, init);
+                return hexoFetch.call(this, resource, init);
               };
 
               // 处理 Next.js 的路由变化
-              const observer = new MutationObserver(function(mutations) {
-                // 查找并修复 next/script 加载的脚本
+              const nextObserver = new MutationObserver(function(mutations) {
                 document.querySelectorAll('script[src^="/_next/"]').forEach(function(el) {
                   const src = el.getAttribute('src');
                   if (src && !src.startsWith('/hexo')) {
@@ -496,7 +489,6 @@ export default async (request: Request, context: Context) => {
                   }
                 });
                 
-                // 修复 next/link 预加载
                 document.querySelectorAll('link[rel="preload"][href^="/_next/"]').forEach(function(el) {
                   const href = el.getAttribute('href');
                   if (href && !href.startsWith('/hexo')) {
@@ -505,29 +497,21 @@ export default async (request: Request, context: Context) => {
                 });
               });
 
-              // 确保页面加载完成后再添加观察器
               if (document.readyState === 'loading') {
                 document.addEventListener('DOMContentLoaded', function() {
-                  observer.observe(document.documentElement, {
-                    childList: true,
-                    subtree: true
-                  });
+                  nextObserver.observe(document.documentElement, { childList: true, subtree: true });
                 });
               } else {
-                observer.observe(document.documentElement, {
-                  childList: true,
-                  subtree: true
-                });
+                nextObserver.observe(document.documentElement, { childList: true, subtree: true });
               }
             }
 
-            // 通用修复处理
+            // 通用修复处理 (DOM 变动监听)
             const observer = new MutationObserver(function(mutations) {
               mutations.forEach(function(mutation) {
                 if (mutation.type === 'childList') {
                   mutation.addedNodes.forEach(function(node) {
                     if (node.nodeType === 1) { // 元素节点
-                      // 修复 <script>, <link>, <img>, <a> 等标签的路径
                       const elements = node.querySelectorAll('script[src], link[href], img[src], a[href], [data-src], [data-href]');
                       elements.forEach(function(el) {
                         ['src', 'href', 'data-src', 'data-href'].forEach(function(attr) {
@@ -538,7 +522,7 @@ export default async (request: Request, context: Context) => {
                                 if (window.location.pathname.startsWith('/hexo') && val.startsWith('/_next/') && !val.startsWith('/hexo')) {
                                   el.setAttribute(attr, '/hexo' + val);
                                 } else {
-                                  el.setAttribute(attr, '${url.origin}${matchedPrefix}' + val);
+                                  el.setAttribute(attr, currentProxyDomain + currentPrefix + val);
                                 }
                               }
                             }
@@ -550,6 +534,25 @@ export default async (request: Request, context: Context) => {
                       const elementsWithStyle = node.querySelectorAll('[style*="url("]');
                       elementsWithStyle.forEach(function(el) {
                         let style = el.getAttribute('style');
+                        if (style) {
+                          style = style.replace(/url\\(['"]?(\\/[^)'"]*?)['"]?\\)/gi, 'url(' + currentProxyDomain + currentPrefix + '$1)');
+                          el.setAttribute('style', style);
+                        }
+                      });
+                    }
+                  });
+                }
+              });
+            });
+
+            observer.observe(document.documentElement, {
+              childList: true,
+              subtree: true
+            });
+          })();
+          </script>
+          `;
+
                         if (style) {
                           style = style.replace(/url\\(['"]?(\\/[^)'"]*?)['"]?\\)/gi, 
                                                'url(${url.origin}${matchedPrefix}$1)');
