@@ -21,6 +21,7 @@
             height: 100vh;
             width: 100vw;
             overflow: hidden;
+            position: relative;
         }
 
         .gateway-container {
@@ -32,6 +33,8 @@
             max-width: 580px;
             text-align: center;
             border-top: 4px solid #0067b8;
+            position: relative;
+            z-index: 10;
         }
 
         .logo-container {
@@ -40,7 +43,6 @@
             margin-bottom: 24px;
         }
 
-        /* Minimalist Microsoft Quad Logo Grid */
         .ms-logo {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -82,6 +84,8 @@
             font-size: 14px;
             outline: none;
             transition: border-color 0.2s;
+            position: relative;
+            z-index: 20;
         }
 
         input:focus {
@@ -99,39 +103,26 @@
             border-radius: 2px;
             cursor: pointer;
             transition: background-color 0.2s;
+            position: relative;
+            z-index: 20;
         }
 
         button:hover {
             background-color: #005da6;
         }
 
-        /* Clean, authentic enterprise corporate footer configuration */
-.azure-footer {
-    display: flex !important;
-    position: fixed !important;
-    bottom: 20px !important;
-    left: 40px !important; /* Positions it to the bottom left, exactly like official portals */
-    color: #616161 !important;
-    font-family: 'Segoe UI', sans-serif !important;
-    font-size: 11px !important;
-    gap: 24px !important;
-    pointer-events: none !important;
-    user-select: none !important;
-}
-
-.azure-footer span {
-    cursor: default;
-}
-
-
-        /* Hides Netlify branding if injected via external scripts */
-        iframe[src*="netlify"], .netlify-logo { display: none !important; }
-
-        .azure-dot {
-            width: 6px;
-            height: 6px;
-            background-color: #00a4ef;
-            border-radius: 50%;
+        .azure-footer {
+            display: flex !important;
+            position: fixed !important;
+            bottom: 20px !important;
+            left: 40px !important;
+            color: #616161 !important;
+            font-family: 'Segoe UI', sans-serif !important;
+            font-size: 11px !important;
+            gap: 24px !important;
+            user-select: none !important;
+            z-index: 1000 !important;
+            pointer-events: none !important; 
         }
     </style>
 </head>
@@ -151,21 +142,17 @@
         
         <form id="proxyForm" onsubmit="handleConnect(event)">
             <div class="input-group">
-                <!-- type="password" converts typed URL characters into secure dots -->
                 <input type="password" id="urlInput" placeholder="Enter institution API access key" required autocomplete="off">
                 <button type="submit">Connect</button>
             </div>
         </form>
     </div>
 
-<!-- Replaces the badge with official Microsoft legal notice strings -->
-<div class="azure-footer">
-    <span>Terms of use</span>
-    <span>Privacy & cookies</span>
-    <span>© 2026 Microsoft</span>
-</div>
-
-
+    <div class="azure-footer">
+        <span>Terms of use</span>
+        <span>Privacy & cookies</span>
+        <span>© 2026 Microsoft</span>
+    </div>
 
     <script>
         function handleConnect(event) {
@@ -174,18 +161,15 @@
             
             if (!destination) return;
 
-            // Automatically format the entry to a full URL if a domain pattern is detected
             if (destination.includes('.') && !destination.startsWith('http://') && !destination.startsWith('https://')) {
                 destination = 'https://' + destination;
             } else if (!destination.includes('.')) {
-                // If it's a casual text string, forward to a secure web search engine
                 destination = 'https://google.com' + encodeURIComponent(destination);
             }
 
-            // Routes target strings seamlessly through the dynamic edge-handler framework
-            window.location.href = __uv$config.prefix + __uv$config.encodeUrl(destination);
+            // Routes to the unique Netlify Edge proxy-handler route
+            window.location.href = window.location.origin + '/proxy/' + destination;
         }
     </script>
 </body>
 </html>
-
