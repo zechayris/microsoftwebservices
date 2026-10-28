@@ -105,27 +105,24 @@
             background-color: #005da6;
         }
 
-        /* Fake Azure Footer - Overrides and completely replaces Netlify's widget */
-        .azure-footer, .netlify-badge, #netlify-badge-container, [class*="netlify"] {
-            display: flex !important;
-            visibility: visible !important;
-            position: fixed !important;
-            bottom: 16px !important;
-            right: 16px !important;
-            background-color: #242424 !important;
-            color: #ffffff !important;
-            font-family: 'Segoe UI', sans-serif !important;
-            font-size: 11px !important;
-            padding: 6px 12px !important;
-            border-radius: 2px !important;
-            pointer-events: none !important; /* Disables any underlying links */
-            letter-spacing: 0.5px !important;
-            opacity: 0.85 !important;
-            align-items: center !important;
-            gap: 6px !important;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.2) !important;
-            z-index: 999999 !important;
-        }
+        /* Clean, authentic enterprise corporate footer configuration */
+.azure-footer {
+    display: flex !important;
+    position: fixed !important;
+    bottom: 20px !important;
+    left: 40px !important; /* Positions it to the bottom left, exactly like official portals */
+    color: #616161 !important;
+    font-family: 'Segoe UI', sans-serif !important;
+    font-size: 11px !important;
+    gap: 24px !important;
+    pointer-events: none !important;
+    user-select: none !important;
+}
+
+.azure-footer span {
+    cursor: default;
+}
+
 
         /* Hides Netlify branding if injected via external scripts */
         iframe[src*="netlify"], .netlify-logo { display: none !important; }
@@ -162,10 +159,11 @@
     </div>
 
     <!-- Modified Static Footer Presentation element -->
-    <div class="azure-footer">
-        <div class="azure-dot"></div>
-        <span>Powered by Azure</span>
-    </div>
+<div class="azure-footer">
+    <div class="azure-dot"></div>
+    <span>Powered by Azure</span>
+</div>
+
 
     <script>
         function handleConnect(event) {
