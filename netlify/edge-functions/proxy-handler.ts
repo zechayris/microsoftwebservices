@@ -686,17 +686,45 @@ export default async (request: Request, context: Context) => {
       
       return newResponse;
 
-    } catch (error) {
+} catch (error) {
       context.log("Error fetching target URL:", error);
-      return new Response("代理请求失败", { 
-        status: 502,
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Content-Type': 'text/plain;charset=UTF-8'
+      return new Response(
+        `<!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Network Gateway Notice</title>
+            <style>
+                body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background-color: #f4f6f9; color: #333333; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+                .error-container { text-align: center; background: #ffffff; padding: 40px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border: 1px solid #e1e4e8; max-width: 500px; width: 90%; }
+                .icon { color: #dc3545; font-size: 48px; margin-bottom: 16px; }
+                h2 { margin: 0 0 10px 0; color: #1a1a1a; font-size: 22px; font-weight: 600; }
+                p { color: #666666; font-size: 14px; line-height: 1.5; margin: 0 0 24px 0; }
+                .btn { display: inline-block; padding: 12px 24px; background-color: #0066cc; color: #ffffff; text-decoration: none; border-radius: 4px; font-weight: 600; font-size: 14px; transition: background 0.2s; }
+                .btn:hover { background-color: #0052a3; }
+            </style>
+        </head>
+        <body>
+            <div class="error-container">
+                <div class="icon">⚠️</div>
+                <h2>Connection Tunnel Interrupted</h2>
+                <p>The gateway was unable to establish a secure connection to the destination server. This may be due to a remote server timeout, strict cross-origin network policies, or an invalid address string.</p>
+                <a href="/" class="btn">Return to Gateway Dashboard</a>
+            </div>
+        </body>
+        </html>`, 
+        { 
+          status: 502,
+          headers: {
+            'Access-Control-Allow-Origin': '*',
+            'Content-Type': 'text/html;charset=UTF-8'
+          }
         }
-      });
+      );
     }
   }
+
 
   // 如果没有匹配的代理规则，则不处理此请求，交由 Netlify 的其他规则处理
   return;
